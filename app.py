@@ -21,7 +21,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'shramicnetworks@gmail.com'
-app.config['MAIL_PASSWORD'] = 'vfvv dqlk caup tqjo'
+app.config['MAIL_PASSWORD'] = '1211 4545 4545'
 app.config['MAIL_DEFAULT_SENDER'] = 'Shramic <shramicnetworks@gmail.com>'
 
 db = SQLAlchemy(app)
