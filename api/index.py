@@ -8,6 +8,13 @@ from functools import wraps
 import os
 import secrets
 
+# Load environment variables from .env file (for local development)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, will use system env vars
+
 # Flask App Configuration
 app = Flask(__name__, 
             template_folder='../templates',
