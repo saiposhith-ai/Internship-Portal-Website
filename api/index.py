@@ -114,20 +114,40 @@ def create_slug(title):
     return title.lower().replace(' ', '-').replace('/', '-')
 
 def get_site_settings():
-    settings = SiteSettings.query.first()
-    if not settings:
-        settings = SiteSettings()
-        db.session.add(settings)
-        db.session.commit()
-    return settings
+    try:
+        settings = SiteSettings.query.first()
+        if not settings:
+            settings = SiteSettings()
+            db.session.add(settings)
+            db.session.commit()
+        return settings
+    except Exception as e:
+        print(f"Error getting site settings: {e}")
+        # Return default settings object without saving to DB
+        return SiteSettings(
+            company_name='Shramic',
+            tagline='Empowering Careers Through Excellence'
+        )
 
 # ======================= PUBLIC ROUTES =======================
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for serverless"""
+    return jsonify({
+        'status': 'healthy',
+        'database': 'connected' if db.engine else 'disconnected'
+    }), 200
+
 @app.route('/')
 def index():
-    settings = get_site_settings()
-    featured_internships = Internship.query.filter_by(is_active=True).order_by(Internship.created_at.desc()).limit(6).all()
-    return render_template('index.html', settings=settings, internships=featured_internships)
+    try:
+        settings = get_site_settings()
+        featured_internships = Internship.query.filter_by(is_active=True).order_by(Internship.created_at.desc()).limit(6).all()
+        return render_template('index.html', settings=settings, internships=featured_internships)
+    except Exception as e:
+        print(f"Error in index route: {e}")
+        return f"Application error: {str(e)}", 500
 
 @app.route('/internships')
 def internships():
@@ -705,7 +725,7 @@ def internal_error(e):
 
 def init_db():
     """Initialize database with default data"""
-    with app.app_context():
+    try:
         db.create_all()
 
         if not Admin.query.first():
@@ -728,12 +748,14 @@ def init_db():
 
         db.session.commit()
         print("Database initialized successfully!")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+        db.session.rollback()
 
-# Initialize database on import (for serverless)
-try:
-    init_db()
-except Exception as e:
-    print(f"Database initialization warning: {e}")
-
-# Export app for serverless (Vercel)
-app = app
+# Initialize database lazily on first request
+@app.before_request
+def initialize_database():
+    if not hasattr(app, 'db_initialized'):
+        with app.app_context():
+            init_db()
+            app.db_initialized = True
